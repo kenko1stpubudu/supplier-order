@@ -129,7 +129,7 @@ body{background:#f8fafb;min-height:100vh;}
     <div class="sw">
       <span class="sico">🔍</span>
       <input type="text" class="sinp" id="spo-search2" placeholder="Supplier name search..."
-        autocomplete="off" oninput="spoFilt(this.value)" onfocus="spoSDD()" onblur="setTimeout(spoHDD,200)">
+        autocomplete="off" oninput="spoInput(this.value)" onfocus="spoSDD()" onblur="setTimeout(spoHDD,200)">
       <div class="sdd" id="spo-dd2"></div>
     </div>
     <div id="spo-info2" style="margin-top:8px;font-size:12px;color:var(--cs);display:none"></div>
@@ -312,13 +312,35 @@ function spoSDD(){
   spoFilt(inp.value||'');
   var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='block';
 }
+function spoInput(v){
+  // Typing always re-opens the dropdown and filters live.
+  var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='block';
+  spoFilt(v||'');
+}
 function spoHDD(){
   var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='none';
   // Restore the selected supplier name in the box if user clicked away without picking
   var inp=document.getElementById('spo-search2');
   if(SPOCur && !inp.value){ inp.value=SPOCur; }
 }
-function spoSel(n){SPOCur=n;document.getElementById('spo-search2').value=n;spoHDD();var items=SPO[n]||[];var l=items.filter(function(it){return spoGS(it)<it.min_stock;}).length;var inf=document.getElementById('spo-info2');inf.style.display='block';inf.innerHTML='<b style="color:var(--fresh-accent)">'+n+'</b> · '+items.length+' products · <b style="color:#d97706">'+l+' low</b>';spoRen();}
+function spoSel(n){
+  SPOCur=n;
+  SPOFlt='all';  // reset filter to "All" tab for every new supplier
+  var inp=document.getElementById('spo-search2');
+  inp.value=n;
+  spoHDD();
+  inp.blur();  // release focus so next click gives a clean, cleared search box
+  // Reset the filter tab highlight back to "All"
+  document.querySelectorAll('#sec-supplier .fl').forEach(function(b,i){
+    b.classList.toggle('on', i===0);
+  });
+  var items=SPO[n]||[];
+  var l=items.filter(function(it){return spoGS(it)<it.min_stock;}).length;
+  var inf=document.getElementById('spo-info2');
+  inf.style.display='block';
+  inf.innerHTML='<b style="color:var(--fresh-accent)">'+n+'</b> · '+items.length+' products · <b style="color:#d97706">'+l+' low</b>';
+  spoRen();
+}
 function spoRen(){
   if(!SPOCur)return;
   var items=(SPO[SPOCur]||[]).map(function(it){return Object.assign({},it,{ls:spoGS(it)});});
