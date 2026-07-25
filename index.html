@@ -30,8 +30,10 @@ body{background:#f8fafb;min-height:100vh;}
   #sec-supplier .sinp:focus{border-color:var(--fresh-accent)}
   #sec-supplier .sico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--cs);font-size:13px;pointer-events:none}
   #sec-supplier .sdd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:white;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.10);z-index:300;max-height:240px;overflow-y:auto;display:none}
-  #sec-supplier .sopt{padding:9px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+  #sec-supplier .sopt{padding:9px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
   #sec-supplier .sopt:hover{background:var(--light);color:var(--fresh-accent)}
+  #sec-supplier .sopt>span:first-child{font-weight:600}
+  #sec-supplier .sdd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:white;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.10);z-index:300;max-height:280px;overflow-y:auto;display:none}
   #sec-supplier .potw{overflow-x:auto;border:1.5px solid var(--border);border-radius:10px}
   #sec-supplier .pot{width:100%;border-collapse:collapse;font-size:13px}
   #sec-supplier .pot thead{background:#f4faf6}
@@ -281,7 +283,27 @@ function spoShowLast(info){
   else{ageEl.style.background='#fee2e2';ageEl.style.color='#991b1b';ageEl.textContent='🔴 '+(Math.floor(age/24))+'d old — needs refresh!';}
 }
 function spoGS(it){if(SPOStk[it.code]!==undefined)return SPOStk[it.code];if(SPOStk['N:'+it.name.toUpperCase()]!==undefined)return SPOStk['N:'+it.name.toUpperCase()];return it.col7;}
-function spoFilt(q){var dd=document.getElementById('spo-dd2');if(!dd)return;var list=q?SPOL.filter(function(s){return s.toLowerCase().indexOf(q.toLowerCase())>=0;}):SPOL;dd.innerHTML=list.map(function(s){var c=SPO[s].length,l=SPO[s].filter(function(it){return spoGS(it)<it.min_stock;}).length;return '<div class="s-opt2" onmousedown="spoSel(\''+s.replace(/'/g,"\'")+'\'">'+s+'<span style="font-size:11px;color:var(--cs)">'+c+' items'+(l?' · <b style=\"color:#d97706\">'+l+' low</b>':'')+'</span></div>';}).join('')||'<div style="padding:10px 14px;font-size:12px;color:var(--cs)">Not found</div>';}
+function spoEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function spoFilt(q){
+  var dd=document.getElementById('spo-dd2');if(!dd)return;
+  var list=q?SPOL.filter(function(s){return s.toLowerCase().indexOf(q.toLowerCase())>=0;}):SPOL;
+  dd.innerHTML=list.map(function(s){
+    var c=SPO[s].length,l=SPO[s].filter(function(it){return spoGS(it)<it.min_stock;}).length;
+    return '<div class="sopt" data-sup="'+spoEsc(s)+'">'
+         + '<span>'+spoEsc(s)+'</span>'
+         + '<span style="font-size:11px;color:var(--cs)">'+c+' items'+(l?' · <b style="color:#d97706">'+l+' low</b>':'')+'</span>'
+         + '</div>';
+  }).join('')||'<div style="padding:10px 14px;font-size:12px;color:var(--cs)">Not found</div>';
+}
+// Event delegation: reliable click handling (mousedown fires before input blur)
+document.addEventListener('mousedown',function(ev){
+  var t=ev.target;
+  var opt=t.closest ? t.closest('#spo-dd2 .sopt') : null;
+  if(opt && opt.getAttribute('data-sup')!==null){
+    ev.preventDefault();
+    spoSel(opt.getAttribute('data-sup'));
+  }
+});
 function spoSDD(){spoFilt(document.getElementById('spo-search2').value||'');var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='block';}
 function spoHDD(){var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='none';}
 function spoSel(n){SPOCur=n;document.getElementById('spo-search2').value=n;spoHDD();var items=SPO[n]||[];var l=items.filter(function(it){return spoGS(it)<it.min_stock;}).length;var inf=document.getElementById('spo-info2');inf.style.display='block';inf.innerHTML='<b style="color:var(--fresh-accent)">'+n+'</b> · '+items.length+' products · <b style="color:#d97706">'+l+' low</b>';spoRen();}
