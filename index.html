@@ -117,6 +117,7 @@ body{background:#f8fafb;min-height:100vh;}
           <div id="spo-last-date" style="font-size:11px;color:var(--cs);margin-bottom:6px;"></div>
           <div id="spo-last-stats" style="font-size:11px;"></div>
           <div id="spo-last-age" style="font-size:11px;margin-top:6px;padding:4px 8px;border-radius:6px;font-weight:600;"></div>
+          <button onclick="spoClearStock()" style="margin-top:8px;width:100%;padding:6px;border:1.5px solid #ef4444;background:white;color:#ef4444;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Clear Stock Data</button>
         </div>
       </div>
     </div>
@@ -283,6 +284,8 @@ function spoShowLast(info){
   else{ageEl.style.background='#fee2e2';ageEl.style.color='#991b1b';ageEl.textContent='🔴 '+(Math.floor(age/24))+'d old — needs refresh!';}
 }
 function spoGS(it){if(SPOStk[it.code]!==undefined)return SPOStk[it.code];if(SPOStk['N:'+it.name.toUpperCase()]!==undefined)return SPOStk['N:'+it.name.toUpperCase()];return it.col7;}
+// Returns true if this item's stock came from an uploaded Excel (live), false if embedded fallback
+function spoStkLive(it){return (SPOStk[it.code]!==undefined)||(SPOStk['N:'+it.name.toUpperCase()]!==undefined);}
 function spoEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function spoFilt(q){
   var dd=document.getElementById('spo-dd2');if(!dd)return;
@@ -350,9 +353,11 @@ function spoRen(){
     var stk=it.ls,minS=it.min_stock||0,sc,bdg;
     if(stk<=0){sc='sout';bdg='<span class="bdg2 bout">OUT</span>';}else if(stk<minS){sc='slow';bdg='<span class="bdg2 blow">LOW</span>';}else{sc='sok';bdg='<span class="bdg2 bok">OK</span>';}
     var ord=SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0);
+    var live=spoStkLive(it);
+    var stkCell=spof(stk)+(live?'':'<span title="Excel එකෙන් stock නෑ — පරණ embedded අගය" style="color:#d97706;font-size:9px;font-weight:700;margin-left:3px;">⚠</span>');
     html+='<tr><td style="color:var(--cs);font-size:11px">'+(i+1)+'</td>'+
       '<td><div style="font-weight:600">'+it.name+'</div><div style="font-size:10px;color:var(--cs)">'+it.code+'</div></td>'+
-      '<td class="cc '+sc+'">'+spof(stk)+'</td><td class="cc" style="color:var(--cs)">'+(minS||'—')+'</td>'+
+      '<td class="cc '+sc+'">'+stkCell+'</td><td class="cc" style="color:var(--cs)">'+(minS||'—')+'</td>'+
       '<td class="cc">'+bdg+'</td><td class="cc" style="color:var(--cs)">'+(it.sugg_order||0)+'</td>'+
       '<td class="cc"><input type="number" class="oi'+(ord>0?' act':'')+'" id="so'+it.code+'" value="'+ord+'" min="0" onchange="spoCO(this,\''+it.code+'\')" oninput="spoCO(this,\''+it.code+'\')"></td></tr>';
   });
@@ -368,6 +373,28 @@ function spoSumF(){if(!SPOCur)return;var oc=0,oq=0;(SPO[SPOCur]||[]).forEach(fun
 function spoSum(items){var low=0,out=0,oc=0,oq=0;items.forEach(function(it){var stk=it.ls;if(stk<=0)out++;else if(stk<(it.min_stock||0))low++;var v=SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0);if(v>0){oc++;oq+=v;}});document.getElementById('ss-tot').textContent=items.length;document.getElementById('ss-ord').textContent=oc;document.getElementById('ss-qty').textContent=oq;document.getElementById('ss-low').textContent=low;document.getElementById('ss-out').textContent=out;}
 function spoAS(){if(!SPOCur)return;SPO[SPOCur].forEach(function(it){if(spoGS(it)<(it.min_stock||0)){SPOOrd[it.code]=it.sugg_order||0;}var el=document.getElementById('so'+it.code);if(el){var v=SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0);el.value=v;el.classList.toggle('act',v>0);}});spoSumF();}
 function spoCl(){SPOOrd={};if(SPOCur)SPO[SPOCur].forEach(function(it){SPOOrd[it.code]=0;});spoRen();}
+function spoClearStock(){
+  if(!confirm('පරණ upload කරපු stock data එක clear කරන්නද?\n\nExcel එකෙන් ආපු stock, orders සහ saved info මකලා දානවා. නැවත Excel එකක් upload කරන්න වෙනවා.')) return;
+  // Wipe uploaded stock, cached file, orders, and saved info
+  SPOStk={};
+  SPORawData=null;
+  SPOFileName='';
+  SPOOrd={};
+  try{ localStorage.removeItem('kenko_spo_last'); }catch(e){}
+  // Reset upload status pill
+  var st=document.getElementById('spo-st');
+  if(st){ st.style.display='none'; st.textContent=''; }
+  var si=document.getElementById('spo-si');
+  if(si){ si.style.display='none'; si.textContent=''; }
+  // Reset the file input so the same file can be re-selected
+  var fin=document.getElementById('spo-f');
+  if(fin){ fin.value=''; }
+  // Reset last-upload panel to empty
+  spoShowLast(null);
+  // Re-render current supplier (now shows embedded stock only)
+  if(SPOCur) spoRen();
+  alert('✓ Stock data cleared. නැවත Excel එකක් upload කරන්න.');
+}
 function spoSF(f,btn){SPOFlt=f;document.querySelectorAll('#sec-supplier .fl').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');spoRen();}
 function spoPr(){
   var items=(SPO[SPOCur]||[]).filter(function(it){return(SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0))>0;});
