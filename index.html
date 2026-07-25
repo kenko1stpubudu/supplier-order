@@ -304,8 +304,20 @@ document.addEventListener('mousedown',function(ev){
     spoSel(opt.getAttribute('data-sup'));
   }
 });
-function spoSDD(){spoFilt(document.getElementById('spo-search2').value||'');var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='block';}
-function spoHDD(){var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='none';}
+function spoSDD(){
+  var inp=document.getElementById('spo-search2');
+  // If a supplier is already selected and its full name fills the box,
+  // clear it on focus so the user can type a fresh search.
+  if(SPOCur && inp.value===SPOCur){ inp.value=''; }
+  spoFilt(inp.value||'');
+  var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='block';
+}
+function spoHDD(){
+  var dd=document.getElementById('spo-dd2');if(dd)dd.style.display='none';
+  // Restore the selected supplier name in the box if user clicked away without picking
+  var inp=document.getElementById('spo-search2');
+  if(SPOCur && !inp.value){ inp.value=SPOCur; }
+}
 function spoSel(n){SPOCur=n;document.getElementById('spo-search2').value=n;spoHDD();var items=SPO[n]||[];var l=items.filter(function(it){return spoGS(it)<it.min_stock;}).length;var inf=document.getElementById('spo-info2');inf.style.display='block';inf.innerHTML='<b style="color:var(--fresh-accent)">'+n+'</b> · '+items.length+' products · <b style="color:#d97706">'+l+' low</b>';spoRen();}
 function spoRen(){
   if(!SPOCur)return;
