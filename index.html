@@ -146,6 +146,26 @@ body{background:#f8fafb;min-height:100vh;}
     <div style="margin-top:8px;font-size:10px;color:#adb5bd;">💡 Add කරන items මේ browser එකේ save වෙනවා. වෙන computer එකකට ගෙනියන්න Export → Import කරන්න.</div>
   </div>
 
+  <!-- Quick Manual PO -->
+  <div class="po-card">
+    <div class="po-card-t">✍️ Quick PO — අතින් items දාලා PO එකක් හදන්න</div>
+    <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--cs);display:block;margin-bottom:4px;">Supplier නම</label>
+        <input type="text" id="qpo-sup" placeholder="උදා: AMIRON" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--cs);display:block;margin-bottom:4px;">Items — එක පේළියකට එක item එක (type හෝ copy-paste)</label>
+        <textarea id="qpo-items" rows="6" placeholder="Item name එකයි, ඉඩක් තියලා quantity එකයි දාන්න. උදාහරණ:&#10;AMIRON BREAST SKINLESS  5&#10;AMIRON WHOLE CHICKEN  30&#10;Fresh Spinach 250g, 12&#10;&#10;(quantity නැත්නම් හිස්ව තියෙනවා — name විතරක් දාන්නත් පුලුවන්)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:vertical;line-height:1.6;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button onclick="spoQuickPO()" style="padding:9px 18px;border:none;background:#dc2626;color:white;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">⬇ Generate PO</button>
+        <button onclick="document.getElementById('qpo-items').value='';document.getElementById('qpo-sup').value='';" style="padding:9px 16px;border:1.5px solid var(--border);background:white;color:var(--cs);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Clear</button>
+        <span style="font-size:10px;color:#adb5bd;flex:1;">💡 Code තියෙනවා නම් item name එකට කලින් දාන්න (optional). Outlet dropdown එකේ delivery address එක ගනී.</span>
+      </div>
+    </div>
+  </div>
+
   <!-- PO Table -->
   <div id="spo-pow" style="display:none">
     <!-- Suggested items from Excel (same supplier, not yet in list) -->
@@ -602,19 +622,19 @@ function spoClearStock(){
   alert('✓ Stock data cleared. නැවත Excel එකක් upload කරන්න.');
 }
 function spoSF(f,btn){SPOFlt=f;document.querySelectorAll('#sec-supplier .fl').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');spoRen();}
-function spoPr(){
-  var items=(SPO[SPOCur]||[]).filter(function(it){return(SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0))>0;});
-  if(!items.length){alert('Order items නෑ — Auto Suggest ඔබලා order quantities add කරන්න');return;}
+function spoBuildPO(supplier, items, outlet){
+  if(!items || !items.length){ alert('PO එකට items නෑ.'); return; }
+  outlet = outlet || 'Colombo-07';
   var totQty=0;
   var rows=items.map(function(it,i){
-    var ord=SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0);
+    var ord=it.qty||0;
     totQty+=ord;
-    return '<tr><td class="cn">'+(i+1)+'</td><td class="pn">'+spoEsc(it.name)+'</td><td class="cd">'+spoEsc(it.code)+'</td><td class="qo">'+ord+'</td></tr>';
+    return '<tr><td class="cn">'+(i+1)+'</td><td class="pn">'+spoEsc(it.name)+'</td><td class="cd">'+spoEsc(it.code||'—')+'</td><td class="qo">'+(ord||'')+'</td></tr>';
   }).join('');
   var today=new Date().toLocaleDateString('en-GB');
-  var pono='PO-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+SPOCur.slice(0,4).toUpperCase();
-  var outlet=(document.getElementById('spo-outlet')||{}).value||'Colombo-07';
+  var pono='PO-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+String(supplier).slice(0,4).toUpperCase();
   var deliveryAddr = outlet.indexOf('Thalawathugoda')>=0 ? 'Thalawathugoda' : '27/12 Rosmead Pl,<br>Colombo 07';
+  var SPOCur=supplier;  // local alias so template strings referencing SPOCur work
   var LOGO='data:image/jpeg;base64,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';
   var w=window.open('','_blank','width=900,height=800');
   var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kenko1st PO '+spoEsc(SPOCur)+'</title>';
@@ -670,6 +690,50 @@ function spoPr(){
   html+='</body></html>';
   w.document.write(html);
   w.document.close();
+}
+
+function spoQuickPO(){
+  var sup=(document.getElementById('qpo-sup').value||'').trim();
+  var raw=(document.getElementById('qpo-items').value||'').trim();
+  if(!sup){ alert('Supplier නම දාන්න.'); return; }
+  if(!raw){ alert('අඩුම තරමේ item එකක් දාන්න.'); return; }
+  var lines=raw.split(/\n/);
+  var items=[];
+  lines.forEach(function(ln){
+    ln=ln.trim();
+    if(!ln)return;
+    var code='', name='', qty=0;
+    // Try comma or tab separated first
+    var parts=ln.split(/\t|,/).map(function(x){return x.trim();}).filter(function(x){return x!=='';});
+    if(parts.length>=2){
+      // last part numeric? → qty
+      var last=parts[parts.length-1];
+      if(/^\d+(\.\d+)?$/.test(last)){ qty=parseFloat(last); parts.pop(); }
+      // any long digit field → code
+      var codeIdx=parts.findIndex(function(p){return /^\d{6,}$/.test(p);});
+      if(codeIdx>=0){ code=parts[codeIdx]; parts.splice(codeIdx,1); }
+      name=parts.join(' ').trim();
+    } else {
+      // single field: detect trailing "name 12" quantity
+      var m=ln.match(/^(.*?)[\s]+(\d+(?:\.\d+)?)$/);
+      if(m){ name=m[1].trim(); qty=parseFloat(m[2]); }
+      else { name=ln; }
+      // leading code?
+      var cm=name.match(/^(\d{6,})\s+(.*)$/);
+      if(cm){ code=cm[1]; name=cm[2].trim(); }
+    }
+    if(name) items.push({name:name, code:code, qty:qty});
+  });
+  if(!items.length){ alert('Items parse කරන්න බැරි වුණා — format එක check කරන්න.'); return; }
+  var outlet=(document.getElementById('spo-outlet')||{}).value||'Colombo-07';
+  spoBuildPO(sup, items, outlet);
+}
+function spoPr(){
+  var items=(SPO[SPOCur]||[]).filter(function(it){return(SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0))>0;})
+    .map(function(it){return {name:it.name, code:it.code, qty:(SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0))};});
+  if(!items.length){alert('Order items නෑ — Auto Suggest ඔබලා order quantities add කරන්න');return;}
+  var outlet=(document.getElementById('spo-outlet')||{}).value||'Colombo-07';
+  spoBuildPO(SPOCur, items, outlet);
 }
 </script>
 </body>
