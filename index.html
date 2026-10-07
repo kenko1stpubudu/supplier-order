@@ -146,26 +146,6 @@ body{background:#f8fafb;min-height:100vh;}
     <div style="margin-top:8px;font-size:10px;color:#adb5bd;">💡 Add කරන items මේ browser එකේ save වෙනවා. වෙන computer එකකට ගෙනියන්න Export → Import කරන්න.</div>
   </div>
 
-  <!-- Quick Manual PO -->
-  <div class="po-card">
-    <div class="po-card-t">✍️ Quick PO — අතින් items දාලා PO එකක් හදන්න</div>
-    <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--cs);display:block;margin-bottom:4px;">Supplier නම</label>
-        <input type="text" id="qpo-sup" placeholder="උදා: AMIRON" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;">
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--cs);display:block;margin-bottom:4px;">Items — එක පේළියකට එක item එක (type හෝ copy-paste)</label>
-        <textarea id="qpo-items" rows="6" placeholder="Item name එකයි, ඉඩක් තියලා quantity එකයි දාන්න. උදාහරණ:&#10;AMIRON BREAST SKINLESS  5&#10;AMIRON WHOLE CHICKEN  30&#10;Fresh Spinach 250g, 12&#10;&#10;(quantity නැත්නම් හිස්ව තියෙනවා — name විතරක් දාන්නත් පුලුවන්)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:vertical;line-height:1.6;"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button onclick="spoQuickPO()" style="padding:9px 18px;border:none;background:#dc2626;color:white;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">⬇ Generate PO</button>
-        <button onclick="document.getElementById('qpo-items').value='';document.getElementById('qpo-sup').value='';" style="padding:9px 16px;border:1.5px solid var(--border);background:white;color:var(--cs);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Clear</button>
-        <span style="font-size:10px;color:#adb5bd;flex:1;">💡 Code තියෙනවා නම් item name එකට කලින් දාන්න (optional). Outlet dropdown එකේ delivery address එක ගනී.</span>
-      </div>
-    </div>
-  </div>
-
   <!-- PO Table -->
   <div id="spo-pow" style="display:none">
     <!-- Suggested items from Excel (same supplier, not yet in list) -->
@@ -209,6 +189,27 @@ body{background:#f8fafb;min-height:100vh;}
       <div class="si">Out: <b id="ss-out" style="color:#dc2626">0</b></div>
     </div>
   </div>
+
+  <!-- Quick Manual PO -->
+  <div class="po-card">
+    <div class="po-card-t">✍️ Quick PO — අතින් items දාලා PO එකක් හදන්න</div>
+    <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--cs);display:block;margin-bottom:4px;">Supplier නම</label>
+        <input type="text" id="qpo-sup" placeholder="උදා: AMIRON" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--cs);display:block;margin-bottom:4px;">Items — එක පේළියකට එක item එක (type හෝ copy-paste)</label>
+        <textarea id="qpo-items" rows="6" placeholder="Item name එකයි, ඉඩක් තියලා quantity එකයි දාන්න. උදාහරණ:&#10;AMIRON BREAST SKINLESS  5&#10;AMIRON WHOLE CHICKEN  30&#10;Fresh Spinach 250g, 12&#10;&#10;(quantity නැත්නම් හිස්ව තියෙනවා — name විතරක් දාන්නත් පුලුවන්)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:vertical;line-height:1.6;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button onclick="spoQuickPO()" style="padding:9px 18px;border:none;background:#dc2626;color:white;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">⬇ Generate PO</button>
+        <button onclick="document.getElementById('qpo-items').value='';document.getElementById('qpo-sup').value='';" style="padding:9px 16px;border:1.5px solid var(--border);background:white;color:var(--cs);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Clear</button>
+        <span style="font-size:10px;color:#adb5bd;flex:1;">💡 Code තියෙනවා නම් item name එකට කලින් දාන්න (optional). Outlet dropdown එකේ delivery address එක ගනී.</span>
+      </div>
+    </div>
+  </div>
+
   </div>
 </div>
 
@@ -349,6 +350,13 @@ function spoShowLast(info){
   else{ageEl.style.background='#fee2e2';ageEl.style.color='#991b1b';ageEl.textContent='🔴 '+(Math.floor(age/24))+'d old — needs refresh!';}
 }
 function spoGS(it){if(SPOStk[it.code]!==undefined)return SPOStk[it.code];if(SPOStk['N:'+it.name.toUpperCase()]!==undefined)return SPOStk['N:'+it.name.toUpperCase()];return it.col7;}
+// Default order qty: suggest ONLY when stock is below minimum (low/out). OK items default 0.
+function spoDefOrd(it){
+  if(SPOOrd[it.code]!==undefined) return SPOOrd[it.code];   // user already set something
+  var stk=spoGS(it);
+  if(stk < (it.min_stock||0)) return (it.sugg_order||0);    // low/out → suggest
+  return 0;                                                  // OK → 0
+}
 // Returns true if this item's stock came from an uploaded Excel (live), false if embedded fallback
 function spoStkLive(it){return (SPOStk[it.code]!==undefined)||(SPOStk['N:'+it.name.toUpperCase()]!==undefined);}
 function spoEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -412,12 +420,12 @@ function spoSel(n){
 function spoRen(){
   if(!SPOCur)return;
   var items=(SPO[SPOCur]||[]).map(function(it){return Object.assign({},it,{ls:spoGS(it)});});
-  var show=items.filter(function(it){if(SPOFlt==='low')return it.ls<it.min_stock;if(SPOFlt==='out')return it.ls<=0;if(SPOFlt==='order')return(SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0))>0;return true;});
+  var show=items.filter(function(it){if(SPOFlt==='low')return it.ls<it.min_stock;if(SPOFlt==='out')return it.ls<=0;if(SPOFlt==='order')return(spoDefOrd(it))>0;return true;});
   var html='';
   show.forEach(function(it,i){
     var stk=it.ls,minS=it.min_stock||0,sc,bdg;
     if(stk<=0){sc='sout';bdg='<span class="bdg2 bout">OUT</span>';}else if(stk<minS){sc='slow';bdg='<span class="bdg2 blow">LOW</span>';}else{sc='sok';bdg='<span class="bdg2 bok">OK</span>';}
-    var ord=SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0);
+    var ord=spoDefOrd(it);
     var live=spoStkLive(it);
     var stkCell=spof(stk)+(live?'':'<span title="Excel එකෙන් stock නෑ — පරණ embedded අගය" style="color:#d97706;font-size:9px;font-weight:700;margin-left:3px;">⚠</span>');
     var delBtn=it._custom?'<span onclick="spoDelItem(\''+it.code+'\')" title="Custom item මකන්න" style="cursor:pointer;color:#ef4444;font-size:11px;margin-left:6px;">🗑</span>':'';
@@ -437,9 +445,9 @@ function spoRen(){
 }
 function spof(v){if(v===null||v===undefined)return'—';var n=parseFloat(v);if(isNaN(n))return'—';return n%1===0?n:n.toFixed(2);}
 function spoCO(el,c){var v=parseInt(el.value)||0;SPOOrd[c]=v;el.classList.toggle('act',v>0);spoSumF();}
-function spoSumF(){if(!SPOCur)return;var oc=0,oq=0;(SPO[SPOCur]||[]).forEach(function(it){var v=SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0);if(v>0){oc++;oq+=v;}});document.getElementById('ss-ord').textContent=oc;document.getElementById('ss-qty').textContent=oq;}
-function spoSum(items){var low=0,out=0,oc=0,oq=0;items.forEach(function(it){var stk=it.ls;if(stk<=0)out++;else if(stk<(it.min_stock||0))low++;var v=SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0);if(v>0){oc++;oq+=v;}});document.getElementById('ss-tot').textContent=items.length;document.getElementById('ss-ord').textContent=oc;document.getElementById('ss-qty').textContent=oq;document.getElementById('ss-low').textContent=low;document.getElementById('ss-out').textContent=out;}
-function spoAS(){if(!SPOCur)return;SPO[SPOCur].forEach(function(it){if(spoGS(it)<(it.min_stock||0)){SPOOrd[it.code]=it.sugg_order||0;}var el=document.getElementById('so'+it.code);if(el){var v=SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0);el.value=v;el.classList.toggle('act',v>0);}});spoSumF();}
+function spoSumF(){if(!SPOCur)return;var oc=0,oq=0;(SPO[SPOCur]||[]).forEach(function(it){var v=spoDefOrd(it);if(v>0){oc++;oq+=v;}});document.getElementById('ss-ord').textContent=oc;document.getElementById('ss-qty').textContent=oq;}
+function spoSum(items){var low=0,out=0,oc=0,oq=0;items.forEach(function(it){var stk=it.ls;if(stk<=0)out++;else if(stk<(it.min_stock||0))low++;var v=spoDefOrd(it);if(v>0){oc++;oq+=v;}});document.getElementById('ss-tot').textContent=items.length;document.getElementById('ss-ord').textContent=oc;document.getElementById('ss-qty').textContent=oq;document.getElementById('ss-low').textContent=low;document.getElementById('ss-out').textContent=out;}
+function spoAS(){if(!SPOCur)return;SPO[SPOCur].forEach(function(it){if(spoGS(it)<(it.min_stock||0)){SPOOrd[it.code]=it.sugg_order||0;}var el=document.getElementById('so'+it.code);if(el){var v=spoDefOrd(it);el.value=v;el.classList.toggle('act',v>0);}});spoSumF();}
 function spoCl(){SPOOrd={};if(SPOCur)SPO[SPOCur].forEach(function(it){SPOOrd[it.code]=0;});spoRen();}
 
 // ── Suggest Excel items that match this supplier but aren't in its list yet ──
@@ -729,8 +737,8 @@ function spoQuickPO(){
   spoBuildPO(sup, items, outlet);
 }
 function spoPr(){
-  var items=(SPO[SPOCur]||[]).filter(function(it){return(SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0))>0;})
-    .map(function(it){return {name:it.name, code:it.code, qty:(SPOOrd[it.code]!==undefined?SPOOrd[it.code]:(it.sugg_order||0))};});
+  var items=(SPO[SPOCur]||[]).filter(function(it){return(spoDefOrd(it))>0;})
+    .map(function(it){return {name:it.name, code:it.code, qty:(spoDefOrd(it))};});
   if(!items.length){alert('Order items නෑ — Auto Suggest ඔබලා order quantities add කරන්න');return;}
   var outlet=(document.getElementById('spo-outlet')||{}).value||'Colombo-07';
   spoBuildPO(SPOCur, items, outlet);
